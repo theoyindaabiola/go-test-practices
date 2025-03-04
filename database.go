@@ -4,21 +4,25 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/jmoiron/sqlx"
 	"github.com/joho/godotenv"
-	_"github.com/lib/pq"
+	_ "github.com/lib/pq"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
-/** 
+/**
 	This is the database creation side, focus on the table and CRUD operations
 	it works with the http request and webframe work *
 **/
 
-var db *sqlx.DB
+var db *gorm.DB
 
-func ConnectDB() error {
+func ConnectDB() {
+
+	var err error
+
 	if err := godotenv.Load(); err != nil {
-		return fmt.Errorf("failed to load .env file: %w", err)
+		fmt.Errorf("failed to load .env file: %w", err)
 	}
 
 	environmentStr := fmt.Sprintf(
@@ -31,99 +35,59 @@ func ConnectDB() error {
 		os.Getenv("DB_SSLMODE"),
 	)
 
-	var err error
-
-	db, err = sqlx.Connect("postgres", environmentStr)
+	db, err = gorm.Open(postgres.Open(environmentStr), &gorm.Config{})
 	if err != nil {
-		return fmt.Errorf("failed to connect to database: %w", err)
+		fmt.Errorf("failed to connect to database: %w", err)
 	}
 
-	if err := AutoMigrate(); err != nil {
-		return fmt.Errorf("failed to migrate: %v", err)
-	}
-	return nil
-}
-
-func AutoMigrate() error {
-	query := `
-		CREATE TABLE IF NOT EXISTS tasks (
-			id VARCHAR(36) PRIMARY KEY,
-			title TEXT NOT NULL,
-			completed BOOLEAN DEFAULT FALSE
-		);
-	`
-
-	_, err := db.Exec(query)
-	return err
+	db.AutoMigrate(&Task{});
 }
 
 func CreateTaskDB(task Task) error {
-	query := `INSERT INTO tasks (id, title, completed) VALUES ($1, $2, $3)`
-	_, err := db.Exec(query, task.ID, task.Title, task.Completed)
+	if err := db.Create(&task).Error; err != nil {
+		return err
+	}
 
-	return err
+	return nil
 }
 
 func GetTasksDB() ([]Task, error) {
 	var tasks []Task
-	query := `SELECT * FROM tasks`
-	// get all selected from the query and pore them into tasks's memory
-	err := db.Select(&tasks, query)
-	return tasks, err
+	// get all selected from the db and pore them into tasks's memory location
+	if err := db.Find(&tasks).Error; err != nil {
+		return nil, err
+	}
+	return tasks, nil
 }
-
-// 
-// func GetTasksDB() ([]Task, error) {
-//     var tasks []Task
-//     query := `SELECT * FROM tasks`
-
-//     if err := db.Get(&tasks, query); err != nil {
-//         return tasks, err
-//     }
-
-//     return tasks, nil
-// }
 
 func GetTaskDB(id string) (Task, error) {
 	var task Task
-	query := `SELECT * FROM tasks WHERE id = $1`
-	// get all selected from the query and pore them into tasks's memory
-	err := db.Get(&task, query, id)
-	return task, err
+	// get all selected from the db and pore them into tasks's memory location
+	if err := db.Where("id = ?", id).First(&task, id).Error; err != nil {
+		return task, err
+	}
+	return task, nil
 }
 
-// func GetTaskDB(id string) (Task, error) {
-// 	var task Task
-// 	query := `SELECT * FROM tasks WHERE id = $1`
-// 	if err := db.Get(&task, query); err != nil {
-// 		return task, err
-// 	}
-
-// 	return task, nil
-// }
-
-func UpdateTaskDB(task Task) error {
-	// query := `UPDATE tasks SET title = $1, completed = $2 id = $3`
-	// _, err := db.Exec(query, task.ID, task.Title, task.Completed)
-
-	query := `UPDATE tasks SET title = $1, completed = $2 WHERE id = $3`
-	_, err := db.Exec(query, task.Title, task.Completed, task.ID)
-
-
-	return err
+// here the GORM accepts map as struct for updating, empty interface is flexible for updating, struct is not.
+func UpdateTaskDB(id uint, task map[string]interface{}) error {
+	// placeholder for the task to be updated
+	var updateTask Task
+	// finds the task by id and store in the memory location of updateTask
+	if err := db.Where("id = ?", id).First(&updateTask).Error; err != nil {
+		return err
+	}
+	// return the fetched task to be updated and update the interface values of task
+	return db.Model(&updateTask).Updates(task).Error
 }
-
-/** 
-	Exec returns 2 parameters hence "_, err" 
-	Delete doesn't need a task placeholder because ...
-	we're only picking the id and deleting it  
-
-**/
 
 func DeleteTaskDB(id string) error {
-	query := `DELETE FROM tasks WHERE id = $1`
-	_, err := db.Exec(query, id)
-
-	return err
+	var task Task
+	// get all selected from the db and pore them into tasks's memory location
+	if err := db.Where("id = ?", id).First(&task, id).Error; err != nil {
+		return err
+	}
+	// gorm functions have Error
+	return db.Delete(&task).Error
 }
 

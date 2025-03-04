@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http" // allows hhtp requests
+	"strconv"
 
 	"github.com/gin-gonic/gin" // web framework
 )
@@ -12,7 +13,7 @@ import (
 	Basically interaction logic
 **/
 
-/** 
+/**
 	gin is the web framework, the context represents request and response access the payload, URL, headers etc...
 **/
 
@@ -64,9 +65,14 @@ func GetTask(c *gin.Context) {
 func UpdateTask(c *gin.Context) {
 	// needed as the key, coming from the URL request
 	id := c.Param("id")
-
-	// need a placeholder
-	var task Task
+	// convert id to string using strconv
+	updateID, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		// use gin's error
+		c.JSON(400, gin.H{"error": "Invalid task ID."})
+	}
+	// need an interface placeholder for the properties to be upadted
+	var task map[string]interface{}
 
 	// bcos its a payload, it needs to be binded
 	if err := c.ShouldBindJSON(&task); err != nil {
@@ -74,9 +80,8 @@ func UpdateTask(c *gin.Context) {
 		return
 	}
 
-	task.ID = id
-
-	if err := UpdateTaskDB(task); err != nil {
+	// update here
+	if err := UpdateTaskDB(uint(updateID), task); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
