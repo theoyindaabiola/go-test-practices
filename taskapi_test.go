@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"strconv"
-
-	// "encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -31,7 +29,7 @@ func setupTestDB() {
 // Set up the router
 func setupRouter() *gin.Engine {
 	gin.SetMode(gin.TestMode)
-	r := gin.Default()
+	r := gin.Default() // create a router for me
 	
 	// group route
 	// taskRoute := r.Group("/")
@@ -45,4 +43,54 @@ func setupRouter() *gin.Engine {
 	r.PUT("/tasks/:id", UpdateTask)
 	r.DELETE("/tasks/:id", DeleteTask)
 	return r
+}
+
+// functions unit testing
+func TestTaskAPI(t *testing.T) {
+	setupTestDB()
+	router := setupRouter()
+
+	// CREATE TASK
+	taskData := `{"title": "Oyindamola, The Mastermind", "completed": "true"}`
+	// request
+	req, _ := http.NewRequest("POST", "/tasks", bytes.NewBuffer(([]byte(taskData))))
+	// header
+	req.Header.Set("Content-Type", "application/json")
+	// test endpoint
+	w := httptest.NewRecorder()
+	// route the test and req
+	router.ServeHTTP(w, req)
+	// assert 
+	assert.Equal(t, http.StatusCreated, w.Code)
+
+	// TEST GET TASK
+	// GET request
+	req, _ = http.NewRequest("GET", "/tasks", nil)
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// confirm the response
+	var tasks []Task // placeholder for the retrieved tasks
+	// get the bodyconvert to what go understands and put in memory location of task
+	json.Unmarshal(w.Body.Bytes(), &tasks)
+	// assert the length retrieved
+	assert.Len(t, tasks, 1)
+
+
+	// TEST UPDATE TASK
+	// get the ID of the tasked fetched above
+	taskID := tasks[0].ID
+	// create a tweaked data to be updated
+	updatedData := `{"title": "Oyindamola's weekly report", "completed": "true"}`
+	// use the PUT request to updated
+	req, _ = http.NewRequest("PUT", "/tasks/"+strconv.Itoa(int(taskID)), bytes.NewBuffer(([]byte(updatedData))))
+	req.Header.Set("Content-Type", "application/json")
+	w = httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// DELETE TASK 
+	
 }

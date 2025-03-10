@@ -62,32 +62,60 @@ func GetTask(c *gin.Context) {
 	c.JSON(http.StatusOK, task)
 }
 
+// func UpdateTask(c *gin.Context) {
+// 	// needed as the key, coming from the URL request
+// 	id := c.Param("id")
+// 	// convert id to string using strconv
+// 	updateID, err := strconv.ParseUint(id, 10, 32)
+// 	if err != nil {
+// 		// use gin's error
+// 		c.JSON(400, gin.H{"error": "Invalid task ID."})
+// 	}
+// 	// need an interface placeholder for the properties to be upadted
+// 	var task map[string]interface{}
+
+// 	// bcos its a payload, it needs to be binded
+// 	if err := c.ShouldBindJSON(&task); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	// update here
+// 	if err := UpdateTaskDB(uint(updateID), task); err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
+
+// 	c.JSON(http.StatusOK, task)
+// }
+
+
+
 func UpdateTask(c *gin.Context) {
-	// needed as the key, coming from the URL request
-	id := c.Param("id")
-	// convert id to string using strconv
-	updateID, err := strconv.ParseUint(id, 10, 32)
+	id := c.Param("id") // needed as the key, coming from the URL request
+	// convert id to an uint
+	taskId, err := strconv.ParseUint(id, 10, 32)
 	if err != nil {
-		// use gin's error
 		c.JSON(400, gin.H{"error": "Invalid task ID."})
 	}
-	// need an interface placeholder for the properties to be upadted
-	var task map[string]interface{}
 
-	// bcos its a payload, it needs to be binded
+	var task map[string]interface{}
+	// get and confirm that there is no error with the payload
 	if err := c.ShouldBindJSON(&task); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		// if error, return error using http in JSON format using the gin context
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()}) 
 		return
 	}
 
-	// update here
-	if err := UpdateTaskDB(uint(updateID), task); err != nil {
+	// task.ID = uint(taskId)
+	if err := UpdateTaskDB(uint(taskId), task); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
 	c.JSON(http.StatusOK, task)
 }
+
+
 
 func DeleteTask(c *gin.Context) {
 	id := c.Param("id")
