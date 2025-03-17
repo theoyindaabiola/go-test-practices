@@ -11,9 +11,7 @@ import(
 
 func main() {
 	// connect to the database
-	if err := ConnectDB(); err != nil {
-		log.Fatalf("failed to connect to the database: %v", err)
-	}
+	ConnectDB()
 
 	// use gin to handle the routes
 	router := gin.Default()

@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http" // allows hhtp requests
+	"strconv"
 
 	"github.com/gin-gonic/gin" // web framework
 )
@@ -12,7 +13,7 @@ import (
 	Basically interaction logic
 **/
 
-/** 
+/**
 	gin is the web framework, the context represents request and response access the payload, URL, headers etc...
 **/
 
@@ -51,8 +52,15 @@ func GetTasks(c *gin.Context) {
 func GetTask(c *gin.Context) {
 	// needed as the key, coming from the URL request 
 	id := c.Param("id")
+
+	// convert id to an uint
+	taskId, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Invalid task ID."})
+	}
+
 	// call the function 
-	task, err := GetTaskDB(id)
+	task, err := GetTaskDB(uint(taskId))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Task not found"})
 		return
@@ -62,31 +70,39 @@ func GetTask(c *gin.Context) {
 }
 
 func UpdateTask(c *gin.Context) {
-	// needed as the key, coming from the URL request
-	id := c.Param("id")
+	id := c.Param("id") // needed as the key, coming from the URL request
+	// convert id to an uint
+	taskId, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Invalid task ID."})
+	}
 
-	// need a placeholder
-	var task Task
-
-	// bcos its a payload, it needs to be binded
+	var task map[string]interface{}
+	// get and confirm that there is no error with the payload
 	if err := c.ShouldBindJSON(&task); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		// if error, return error using http in JSON format using the gin context
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()}) 
 		return
 	}
 
-	task.ID = id
-
-	if err := UpdateTaskDB(task); err != nil {
+	// task.ID = uint(taskId)
+	if err := UpdateTaskDB(uint(taskId), task); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
 	c.JSON(http.StatusOK, task)
 }
 
 func DeleteTask(c *gin.Context) {
 	id := c.Param("id")
-	if err := DeleteTaskDB(id); err != nil {
+
+	// convert id to an uint
+	taskId, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		c.JSON(400, gin.H{"error": "Invalid task ID."})
+	}
+
+	if err := DeleteTaskDB(uint(taskId)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
