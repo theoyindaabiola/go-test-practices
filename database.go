@@ -60,10 +60,10 @@ func GetTasksDB() ([]Task, error) {
 	return tasks, nil
 }
 
-func GetTaskDB(id string) (Task, error) {
+func GetTaskDB(id uint) (Task, error) {
 	var task Task
 	// get all selected from the db and pore them into tasks's memory location
-	if err := db.Where("id = ?", id).First(&task, id).Error; err != nil {
+	if err := db.Where("id = ?", id).First(&task).Error; err != nil {
 		return task, err
 	}
 	return task, nil
@@ -81,10 +81,10 @@ func UpdateTaskDB(id uint, task map[string]interface{}) error {
 	return db.Model(&updateTask).Updates(task).Error
 }
 
-func DeleteTaskDB(id string) error {
+func DeleteTaskDB(id uint) error {
 	var task Task
 	// get all selected from the db and pore them into tasks's memory location
-	if err := db.Where("id = ?", id).First(&task, id).Error; err != nil {
+	if err := db.Where("id = ?", id).First(&task).Error; err != nil {
 		return err
 	}
 	// gorm functions have Error
