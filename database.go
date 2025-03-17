@@ -22,7 +22,7 @@ func ConnectDB() {
 	var err error
 
 	if err := godotenv.Load(); err != nil {
-		fmt.Errorf("failed to load .env file: %w", err)
+		fmt.Printf("failed to load .env file: %v", err)
 	}
 
 	environmentStr := fmt.Sprintf(
@@ -37,7 +37,7 @@ func ConnectDB() {
 
 	db, err = gorm.Open(postgres.Open(environmentStr), &gorm.Config{})
 	if err != nil {
-		fmt.Errorf("failed to connect to database: %w", err)
+		fmt.Printf("failed to connect to database: %v\n", err)
 	}
 
 	db.AutoMigrate(&Task{});
