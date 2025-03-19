@@ -1,11 +1,21 @@
-package main
+package controllers
 
 import (
 	"net/http" // allows hhtp requests
 	"strconv"
+	"taskapi/services"
+	"taskapi/models" // the model
 
 	"github.com/gin-gonic/gin" // web framework
 )
+
+type TaskController struct {
+	TaskService *services.TaskService
+}
+
+func NewTaskController(tc *services.TaskService) *TaskController{
+	return &TaskController{TaskService: tc}
+}
 
 /**
 	this is the logic side of things that puts in the actual task content from the user
@@ -17,8 +27,8 @@ import (
 	gin is the web framework, the context represents request and response access the payload, URL, headers etc...
 **/
 
-func CreateTask(c *gin.Context) {
-	var task Task
+func (tc *TaskController) CreateTask(c *gin.Context) {
+	var task models.Task
 
 	// bind the JSON
 	if err := c.ShouldBindJSON(&task); err != nil {
@@ -30,7 +40,7 @@ func CreateTask(c *gin.Context) {
 	the payload coming from the user is the JSON right, gin converts the 
 	response to the user to JSON,  and if any error, return the error in JSON format as well
 **/
-	if err := CreateTaskDB(task); err != nil {
+	if err := tc.TaskService.CreateTask(task); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -38,9 +48,9 @@ func CreateTask(c *gin.Context) {
 	c.JSON(http.StatusCreated, "Task Created")
 }
 
-func GetTasks(c *gin.Context) {
+func (tc *TaskController) GetTasks(c *gin.Context) {
 	// call the function 
-	tasks, err := GetTasksDB()
+	tasks, err := tc.TaskService.GetTasks()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -49,7 +59,7 @@ func GetTasks(c *gin.Context) {
 	c.JSON(http.StatusOK, tasks)
 }
 
-func GetTask(c *gin.Context) {
+func (tc *TaskController) GetTask(c *gin.Context) {
 	// needed as the key, coming from the URL request 
 	id := c.Param("id")
 
@@ -60,7 +70,7 @@ func GetTask(c *gin.Context) {
 	}
 
 	// call the function 
-	task, err := GetTaskDB(uint(taskId))
+	task, err := tc.TaskService.GetTask(uint(taskId))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Task not found"})
 		return
@@ -69,7 +79,7 @@ func GetTask(c *gin.Context) {
 	c.JSON(http.StatusOK, task)
 }
 
-func UpdateTask(c *gin.Context) {
+func (tc *TaskController) UpdateTask(c *gin.Context) {
 	id := c.Param("id") // needed as the key, coming from the URL request
 	// convert id to an uint
 	taskId, err := strconv.ParseUint(id, 10, 32)
@@ -86,14 +96,14 @@ func UpdateTask(c *gin.Context) {
 	}
 
 	// task.ID = uint(taskId)
-	if err := UpdateTaskDB(uint(taskId), task); err != nil {
+	if err := tc.TaskService.UpdateTask(uint(taskId), task); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, task)
 }
 
-func DeleteTask(c *gin.Context) {
+func (tc *TaskController) DeleteTask(c *gin.Context) {
 	id := c.Param("id")
 
 	// convert id to an uint
@@ -102,7 +112,7 @@ func DeleteTask(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "Invalid task ID."})
 	}
 
-	if err := DeleteTaskDB(uint(taskId)); err != nil {
+	if err := tc.TaskService.DeleteTask(uint(taskId)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

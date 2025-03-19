@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"log"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -11,13 +12,10 @@ import (
 )
 
 /**
-	This is the database creation side, focus on the table and CRUD operations
-	it works with the http request and webframe work *
+	This is the database creation side, focus on the table creation and the connection to the database
 **/
 
-var db *gorm.DB
-
-func ConnectDB() {
+func ConnectDB() *gorm.DB {
 
 	var err error
 
@@ -35,61 +33,14 @@ func ConnectDB() {
 		os.Getenv("DB_SSLMODE"),
 	)
 
-	db, err = gorm.Open(postgres.Open(environmentStr), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(environmentStr), &gorm.Config{})
 	if err != nil {
-		fmt.Printf("failed to connect to database: %v\n", err)
+		log.Fatal("failed to connect to database: %v\n", err)
 	}
 
-	db.AutoMigrate(&Task{});
-}
-
-func CreateTaskDB(task Task) error {
-	if err := db.Create(&task).Error; err != nil {
-		return err
+	err = db.AutoMigrate(&Task{});
+	if err != nil {
+		log.Fatal("failed to migrate the database: %v\n", err)
 	}
-
-	return nil
+	return db
 }
-
-func GetTasksDB() ([]Task, error) {
-	var tasks []Task
-	// get all selected from the db and pore them into tasks's memory location
-	if err := db.Find(&tasks).Error; err != nil {
-		return nil, err
-	}
-	return tasks, nil
-}
-
-func GetTaskDB(id uint) (Task, error) {
-	var task Task
-	// get all selected from the db and pore them into tasks's memory location
-	if err := db.Where("id = ?", id).First(&task).Error; err != nil {
-		return task, err
-	}
-	return task, nil
-}
-
-// here the GORM accepts map as struct for updating, empty interface is flexible for updating, struct is not.
-func UpdateTaskDB(id uint, task map[string]interface{}) error {
-	// placeholder for the task to be updated
-	var updateTask Task
-	// finds the task by id and store in the memory location of updateTask
-	if err := db.Where("id = ?", id).First(&updateTask).Error; err != nil {
-		return err
-	}
-	// return the fetched task to be updated and update the interface values of task
-	return db.Model(&updateTask).Updates(task).Error
-}
-
-func DeleteTaskDB(id uint) error {
-	var task Task
-	// get all selected from the db and pore them into tasks's memory location
-	if err := db.Where("id = ?", id).First(&task).Error; err != nil {
-		return err
-	}
-	// gorm functions have Error
-	return db.Delete(&task).Error
-}
-
-/// function testing with air...
-/// unit testing...
