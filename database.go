@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"log"
 
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
@@ -11,13 +12,10 @@ import (
 )
 
 /**
-	This is the database creation side, focus on the table and CRUD operations
-	it works with the http request and webframe work *
+	This is the database creation side, focus on the table creation and the connection to the database
 **/
 
-var db *gorm.DB
-
-func ConnectDB() {
+func ConnectDB() *gorm.DB {
 
 	var err error
 
@@ -35,10 +33,14 @@ func ConnectDB() {
 		os.Getenv("DB_SSLMODE"),
 	)
 
-	db, err = gorm.Open(postgres.Open(environmentStr), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(environmentStr), &gorm.Config{})
 	if err != nil {
-		fmt.Printf("failed to connect to database: %v\n", err)
+		log.Fatal("failed to connect to database: %v\n", err)
 	}
 
-	db.AutoMigrate(&Task{});
+	err = db.AutoMigrate(&Task{});
+	if err != nil {
+		log.Fatal("failed to migrate the database: %v\n", err)
+	}
+	return db
 }
