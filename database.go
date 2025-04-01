@@ -9,6 +9,7 @@ import (
 	_ "github.com/lib/pq"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"taskapi/models"
 )
 
 /**
@@ -35,12 +36,12 @@ func ConnectDB() *gorm.DB {
 
 	db, err := gorm.Open(postgres.Open(environmentStr), &gorm.Config{})
 	if err != nil {
-		log.Fatal("failed to connect to database: %v\n", err)
+		log.Printf("failed to connect to database: %v\n", err)
 	}
 
-	err = db.AutoMigrate(&Task{});
+	err = db.AutoMigrate(&models.Task{});
 	if err != nil {
-		log.Fatal("failed to migrate the database: %v\n", err)
+		log.Printf("failed to migrate the database: %v\n", err)
 	}
 	return db
 }
