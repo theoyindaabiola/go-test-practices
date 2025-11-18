@@ -30,7 +30,7 @@ func (dao *TaskDAO) GetTasksDB() ([]models.Task, error) {
 	return tasks, nil
 }
 
-func (dao *TaskDAO) GetTaskDB(id uint) (models.Task, error) {
+func (dao *TaskDAO) GetTaskDB(id string) (models.Task, error) {
 	var task models.Task
 	// get all selected from the db and pore them into tasks's memory location
 	if err := dao.DB.Where("id = ?", id).First(&task).Error; err != nil {
@@ -40,7 +40,7 @@ func (dao *TaskDAO) GetTaskDB(id uint) (models.Task, error) {
 }
 
 // here the GORM accepts map as struct for updating, empty interface is flexible for updating, struct is not.
-func (dao *TaskDAO) UpdateTaskDB(id uint, task map[string]interface{}) error {
+func (dao *TaskDAO) UpdateTaskDB(id string, task map[string]interface{}) error {
 	// placeholder for the task to be updated
 	var updateTask models.Task
 	// finds the task by id and store in the memory location of updateTask
@@ -51,7 +51,7 @@ func (dao *TaskDAO) UpdateTaskDB(id uint, task map[string]interface{}) error {
 	return dao.DB.Model(&updateTask).Updates(task).Error
 }
 
-func (dao *TaskDAO) DeleteTaskDB(id uint) error {
+func (dao *TaskDAO) DeleteTaskDB(id string) error {
 	var task models.Task
 	// get all selected from the db and pore them into tasks's memory location
 	if err := dao.DB.Where("id = ?", id).First(&task).Error; err != nil {

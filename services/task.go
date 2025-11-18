@@ -21,14 +21,14 @@ func (s *TaskService) GetTasks() ([]models.Task, error) {
 	return s.TaskDAO.GetTasksDB()
 }
 
-func (s *TaskService) GetTask(id uint) (models.Task, error) {
+func (s *TaskService) GetTask(id string) (models.Task, error) {
 	return s.TaskDAO.GetTaskDB(id)
 }
 
-func (s *TaskService) UpdateTask(id uint, task map[string]interface{}) error {
+func (s *TaskService) UpdateTask(id string, task map[string]interface{}) error {
 	return s.TaskDAO.UpdateTaskDB(id, task)
 }
 
-func (s *TaskService) DeleteTask(id uint) error {
+func (s *TaskService) DeleteTask(id string) error {
 	return s.TaskDAO.DeleteTaskDB(id)
 }
